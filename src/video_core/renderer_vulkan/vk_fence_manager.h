@@ -28,7 +28,7 @@ public:
     explicit InnerFence(Scheduler& scheduler_, bool is_stubbed_);
     ~InnerFence();
 
-    void Queue(VideoCore::RasterizerInterface& rasterizer);
+    void Queue();
 
     bool IsSignaled() const;
 
@@ -62,6 +62,7 @@ protected:
     void QueueFence(Fence& fence) override;
     bool IsFenceSignaled(Fence& fence) const override;
     void WaitFence(Fence& fence) override;
+    void SubmitDeferredWork() override;
 
 private:
     Scheduler& scheduler;

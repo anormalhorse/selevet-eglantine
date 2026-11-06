@@ -16,6 +16,9 @@
 #include "video_core/framebuffer_config.h"
 #include "video_core/rasterizer_download_area.h"
 
+namespace Common {
+class Event;
+}
 namespace Core {
 class System;
 } // namespace Core
@@ -217,6 +220,12 @@ public:
 
     [[nodiscard]] bool IsAsync() const;
 
+    /// Whether a channel is suspended on a semaphore acquire (callable from any thread).
+    [[nodiscard]] bool HasSuspendedChannels() const;
+    [[nodiscard]] bool IsIdleOnPendingSemaphore() const;
+    void SetPendingIdleWake(const std::shared_ptr<Common::Event>& event);
+    void WakePendingChannels();
+
     [[nodiscard]] bool UseNvdec() const;
 
     void RendererFrameEndNotify();
@@ -248,16 +257,15 @@ public:
     /// Notify rasterizer that any caches of the specified region should be flushed to Switch memory
     [[nodiscard]] VideoCore::RasterizerDownloadArea OnCPURead(DAddr addr, u64 size);
 
-    u64 ReadbackGeneration() const;
-    void InvalidateReadbackCache();
-    void BeginAsyncGuestWrite();
-    void EndAsyncGuestWrite();
-
     /// Notify rasterizer that any caches of the specified region should be flushed to Switch memory
     void FlushRegion(DAddr addr, u64 size);
 
     /// Runs func on the GPU thread after the command lists submitted so far.
     void RunInOrder(std::function<void()>&& func);
+
+    /// RunInOrder for GPU memory maps: also done before the GPU thread reads the command lists
+    /// submitted later (with the GPU split, on its front rather than its back).
+    void MapInOrder(std::function<void()>&& func);
 
     /// Notify rasterizer that any caches of the specified region should be invalidated
     void InvalidateRegion(DAddr addr, u64 size, bool preserve_gpu_writes = false);
